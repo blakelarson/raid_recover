@@ -11,13 +11,14 @@ f_array.append( open('testpart1.bytes', 'wb') )
 f_array.append( open('testpart2.bytes', 'wb') )
 f_array.append( open('testpart3.bytes', 'wb') )
 
-num_intial_bytes = 512
+header_bytes = 0
+num_intial_bytes = 5*1024
 for f in f_array:
 	from random import randbytes
 	front_bytes = randbytes( num_intial_bytes )
-#	f.write(front_bytes)
+	header_bytes = f.write(front_bytes)
 
-read_pos = 0 	# num_intial_bytes
+read_pos = header_bytes
 num_devs = len(f_array)
 dev_parity_index = num_devs-1	# start with final one
 while read_pos < len(inbytes):
