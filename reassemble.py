@@ -40,7 +40,9 @@ def readchunk(devlist:list, parity_index:int, CHUNKSIZE:int):
             d.nextpos += CHUNKSIZE
         return fullchunk
     else:
-        logging.warning(f'parity check failed')
+        full_xor:bytes = xor_chunks(chunkarray+[parity_chunk])
+        non_zero_count = len(full_xor) - full_xor.count(b'\x00')
+        logging.warning(f'parity check failed. {non_zero_count} ({non_zero_count/len(full_xor):.1f}%) different bytes')
         return None
 
 def save_json(config:json, source_dev_list:list, dest_dev:Device):
