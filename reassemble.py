@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -104,6 +105,20 @@ def main(config:json, source_dev_list:list, dest_dev:Device):
     #    if dev_index >= len(source_dev_list):
     #        dev_index = 0
 
+def get_args(config):
+    parser = argparse.ArgumentParser("reassemble.py")
+    parser.add_argument('--restart', action='store_true', help='Restart entire thing')
+    args = parser.parse_args()
+
+    if args.restart:
+        for idx in range(len(config['source_devices'])):
+            config['source_devices'][idx]['next_read_position'] = 0
+        config['next_write_position'] = 0
+        logging.info('restarting entire process')
+    
+    return config
+
+
 def shutdown(config:json, source_dev_list:list, dest_dev:Device):
     save_json(config, source_dev_list, dest_dev)
     logging.debug(f'Closing all {len(Device.all_fh)} files:')
@@ -113,6 +128,8 @@ def shutdown(config:json, source_dev_list:list, dest_dev:Device):
 if __name__ == "__main__":
     with open("config.json") as fj:
         config = json.load(fj)
+
+    config = get_args(config)    
 
     logging.debug('--- Config Loaded ---')
     source_dev_list = load_sources(config)
