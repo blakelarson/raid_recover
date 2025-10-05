@@ -18,7 +18,7 @@ for f in f_array:
 	front_bytes = randbytes( num_intial_bytes )
 	header_bytes = f.write(front_bytes)
 
-read_pos = header_bytes
+read_pos = 0
 num_devs = len(f_array)
 dev_parity_index = num_devs-1	# start with final one
 while read_pos < len(inbytes):
