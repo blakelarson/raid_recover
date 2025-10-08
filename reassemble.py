@@ -5,6 +5,11 @@ import os
 from functools import reduce
 from operator import xor
 
+# TODO: use the searching function to just zoom up to the next parity spot
+# need to check that the non-partiy chunk comes first then we zoom up to the parity.
+# if the parity runs out before the end of the chunk, then we might have a problem!
+# I'm guessing that any superblock or other metadata occurs between blocks. 
+
 logging.basicConfig(level=logging.DEBUG, filename="reassemble.log")
 
 class Device(object):
