@@ -9,6 +9,21 @@ from operator import xor
 # need to check that the non-partiy chunk comes first then we zoom up to the parity.
 # if the parity runs out before the end of the chunk, then we might have a problem!
 # I'm guessing that any superblock or other metadata occurs between blocks. 
+# perhaps we "find" the zeros to find the border (which may be approximate!)
+# count(b'\x00') of a subset -- start at first half -- if there is a larger percentage
+# of zeros in the second half than there are in the whole then we are on to something.
+# We need 100% zeros in a final section to do an auto-skip. Everything else is
+# a result that needs flagging. So maybe...
+# Check if last 8 bytes or whatever are zeros (i.e. partiy checked). If so then we 
+# potentially can do a skip. So we do the skip.
+# Check if final half of results are zeros. If yes, then check final quarter.
+# if not, check final three quarters. Put another way:
+# a = 0, b = end (big search). c = (a+b)/2
+# if all_zeros(c,b) then c = (a+c)/2 else c = (c+b)/2 and a = c_old 
+# the "else" works because we know the left size is not all zeros
+# for example, a = 0, b = 120 so c = 60
+# if all_zeros(c,b) then c = (a+c/2)=30 else c = (c+b)/2 = 90 and a = 60. Say the else:
+# if all_zeros(90,120) then c = 75 else a = 90 and c = 105
 
 logging.basicConfig(level=logging.DEBUG, filename="reassemble.log")
 
