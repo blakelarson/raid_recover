@@ -1,7 +1,7 @@
 from random import randbytes
 
-chunk_size = 65536
-num_bytes = 600*chunk_size
+chunk_size = 524288
+num_bytes = 60*chunk_size
 
 all_bytes = randbytes( num_bytes )
 

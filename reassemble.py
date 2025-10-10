@@ -4,6 +4,9 @@ import logging
 import os
 from functools import reduce
 from operator import xor
+from math import ceil
+
+# TODO: need to *not* advance parity if we are skipping
 
 # TODO: use the searching function to just zoom up to the next parity spot
 # need to check that the non-partiy chunk comes first then we zoom up to the parity.
@@ -24,6 +27,7 @@ from operator import xor
 # for example, a = 0, b = 120 so c = 60
 # if all_zeros(c,b) then c = (a+c/2)=30 else c = (c+b)/2 = 90 and a = 60. Say the else:
 # if all_zeros(90,120) then c = 75 else a = 90 and c = 105
+# WAIT -- if we only care if zeros at end, then b never changes
 
 logging.basicConfig(level=logging.DEBUG, filename="reassemble.log")
 
@@ -45,6 +49,7 @@ def readchunk(devlist:list, parity_index:int, CHUNKSIZE:int):
     data_dev_list = list(range(len(devlist)))   # just all the drives
     del data_dev_list[parity_index]     # remove the parity drive
     for idx in data_dev_list: #range(num_devs):
+        logging.debug(f'Reading {CHUNKSIZE} bytes from {devlist[idx].devpath} starting at {devlist[idx].nextpos}')
         chunkarray.append( os.read( devlist[idx].fh, CHUNKSIZE) )
         logging.debug(f'{len(chunkarray[-1])} bytes from data device {idx}')
     if len(chunkarray[0]) == 0:
@@ -63,6 +68,35 @@ def readchunk(devlist:list, parity_index:int, CHUNKSIZE:int):
         full_xor:bytes = xor_chunks(chunkarray+[parity_chunk])
         non_zero_count = len(full_xor) - full_xor.count(b'\x00')
         logging.warning(f'parity check failed. {non_zero_count} ({non_zero_count/len(full_xor):.1f}%) different bytes')
+        end_zero_count = full_xor[-16:].count(b'\x00')
+        logging.warning(f'end 16 bytes have parity')
+        left:int = 0
+        right:int = len(full_xor)
+        test:int = ceil( right/2 )
+        while (right-left) > 1:
+            # evaluate test sample
+            end_zero_count = full_xor[test:].count(b'\x00')
+            size = len(full_xor) - test
+            logging.debug(f'end_zero_count: {end_zero_count} \t size: {size}')
+            if end_zero_count < size:
+                # there are some non-zeros in the test sample
+                # so the border has to be to the right of test
+                left = test
+                test = ceil( (test+right)/2 )
+                logging.debug(f'Still have some disparity. new parameters are:\t left = {left} \t test = {test}')
+            elif end_zero_count == size:
+                # all in sample are zeros. Border must be to the left
+                right = test
+                test = ceil( (left+test)/2 )
+                logging.debug(f'all in sample have parity. need to sample more. new parameters are:\t test = {test} \t right = {right}')
+            else:
+                raise
+        logging.debug(f'solved. left = {left} and test = {test} and right = {right}.')
+        for d in devlist:
+            fwd:int = right - CHUNKSIZE
+            logging.debug(f'Scooting forward {fwd} on device {d.devpath}')
+            os.lseek(d.fh, fwd, os.SEEK_CUR)
+            d.nextpos += right
         return None
 
 def save_json(config:json, source_dev_list:list, dest_dev:Device):
@@ -100,7 +134,7 @@ def main(config:json, source_dev_list:list, dest_dev:Device):
     while source_dev_list[0].nextpos <= source_dev_list[0].size: #dev_index >= 0:
         chunk = readchunk( source_dev_list, parity_index, CHUNKSIZE ) #dev_index )
         if chunk is not None:
-            scooted = 0
+            #scooted = 0
             if len(chunk) == 0:
                 logging.warning('no more data available. Exiting')
                 return
@@ -113,14 +147,15 @@ def main(config:json, source_dev_list:list, dest_dev:Device):
             if parity_index < 0:
                 parity_index = len(source_dev_list)-1
         else:
+            pass
             # scoot forward a little and check again
-            scoot_len = 512
-            for d in source_dev_list:
-                # need to rewind last read then scoot
-                os.lseek(d.fh, scoot_len-CHUNKSIZE, os.SEEK_CUR)
-                d.nextpos += scoot_len
-            scooted += scoot_len
-            logging.debug(f'Scooted forward {scoot_len} bytes (running total {scooted})')
+            #scoot_len = 512
+            #for d in source_dev_list:
+            #    # need to rewind last read then scoot
+            #    os.lseek(d.fh, scoot_len-CHUNKSIZE, os.SEEK_CUR)
+            #    d.nextpos += scoot_len
+            #scooted += scoot_len
+            #logging.debug(f'Scooted forward {scoot_len} bytes (running total {scooted})')
 
     return
     #    dev_index += 1

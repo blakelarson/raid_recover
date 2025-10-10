@@ -1,19 +1,19 @@
 {
     "chunksize": 524288,
     "dest_devpath": "test_dest.bytes",
-    "next_write_position": 39321600,
+    "next_write_position": 31457280,
     "source_devices": [
         {
             "devpath": "testpart1.bytes",
-            "next_read_position": 19928064
+            "next_read_position": 15733760
         },
         {
             "devpath": "testpart2.bytes",
-            "next_read_position": 19928064
+            "next_read_position": 15733760
         },
         {
             "devpath": "testpart3.bytes",
-            "next_read_position": 19928064
+            "next_read_position": 15733760
         }
     ]
 }

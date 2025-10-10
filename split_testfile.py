@@ -1,6 +1,6 @@
 from random import randbytes
 
-chunksize = 65536
+chunksize = 524288
 
 with open('test_source.bytes', 'rb') as infile:
 	inbytes = bytes(infile.read())
